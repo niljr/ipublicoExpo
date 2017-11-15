@@ -1,68 +1,86 @@
 import React from "react";
-import { ScrollView, Text, Linking, View, Image } from "react-native";
+import { ScrollView, Text, Linking, View, Image, StatusBar } from "react-native";
 import { Card, Button } from "react-native-elements";
 import { Asset, AppLoading } from 'expo';
 
-const images = [
-  {
-    key: 1,
-    name: "Nathan Anderson",
-    image: require("../images/1.jpg"),
-    url: "https://unsplash.com/photos/C9t94JC4_L8"
-  },
-  {
-    key: 2,
-    name: "Jamison McAndie",
-    image: require("../images/2.jpg"),
-    url: "https://unsplash.com/photos/waZEHLRP98s"
-  },
-  {
-    key: 3,
-    name: "Alberto Restifo",
-    image: require("../images/3.jpg"),
-    url: "https://unsplash.com/photos/cFplR9ZGnAk"
-  },
-  {
-    key: 4,
-    name: "John Towner",
-    image: require("../images/4.jpg"),
-    url: "https://unsplash.com/photos/89PFnHKg8HE"
-  }
-];
+import firebase from '../config/firebase';
+import ReportList from '../components/ReportList';
+import IconButton from '../components/IconsButton';
+
 
 class Home extends React.Component {
-  constructor() {
-    super();
+  static navigationOptions = ({ navigation }) => {
+    return {
+      title: 'iPublico',
+      headerStyle:{ backgroundColor: '#45AF52' },
+      headerTitleStyle:{ color: '#ffffff'},
+      headerLeft: <IconButton iconName='md-menu' navigation={navigation} goTo={'DrawerOpen'} />,
+      // headerRight: <IconButton iconName='ios-map-outline' navigation={navigation} goTo={'Map'} />
+      headerRight: <IconButton iconName='ios-map-outline' navigation={navigation} goTo={'AddReport'} />
+    }
+  };
+  
+  constructor(props) {
+    super(props);
     this.state = {
+      reports: [],
       isReady: false,
     };
   }
 
+  componentDidMount() {
+    firebase.database()
+    .ref('reports')
+    .on('value', (snapshot) => {
+      // const value = snapshot.val();
+      // console.log('value', value);
+      let returnArr = [];
+      snapshot.forEach(childSnapshot => {
+          let item = childSnapshot.val(); 
+          item.key = childSnapshot.key;
+          returnArr.push(item);
+      });
+      console.log(returnArr);
+      this.setState({ reports:returnArr })
+    });
+    
+    // firebase.auth().onAuthStateChanged((user) => {
+    //   if (user) {
+    //     let userData = {
+    //       fbuid: user.uid,
+    //       name: user.displayName,
+    //       email :user.email,
+    //       phoneNumber: user.phoneNumber,
+    //       photoUrl: user.photoURL,
+    //     };
+    //     this.props.dispatch(setUserData(userData))
+    //   } 
+    // })
+  }
+
   render() {
-    if (!this.state.isReady) {
-      return (
-        <AppLoading
-          startAsync={this._cacheResourcesAsync}
-          onFinish={() => this.setState({ isReady: true })}
-          onError={console.warn}
-        />
-      );
-    }
+    // if (!this.state.isReady) {
+    //   return (
+    //     <AppLoading
+    //       startAsync={this._cacheResourcesAsync}
+    //       onFinish={() => this.setState({ isReady: true })}
+    //       onError={console.warn}
+    //     />
+    //   );
+    // }
     return(
       <View style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{ paddingVertical: 20 }}>
-          {images.map(({ name, image, url, key }) => (
-            <Card title={`CARD ${key}`} image={image} key={key}>
-              <Text style={{ marginBottom: 10 }}>
-                Photo by {name}.
-              </Text>
-              <Button
-                backgroundColor="#03A9F4"
-                title="VIEW NOW"
-                onPress={() => Linking.openURL(url)}
-              />
-            </Card>
-          ))}
+          <StatusBar backgroundColor={'#389143'} barStyle="light-content" />
+            {
+              this.state.reports.length > 0 ? 
+                this.state.reports.map((report, i) => (
+                  // this.renderItem(report, i)
+                  <ReportList key={i} report={report} />
+                ))
+              :
+              null
+            }
         </ScrollView>
       </View>
     );
